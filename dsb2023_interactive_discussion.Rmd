@@ -1,0 +1,41 @@
+---
+title: "DSB Interactive Discussion 2023"
+author: "Erwin Lares"
+date: "2022-11-08"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(palmerpenguins)
+
+data <- penguins
+
+
+
+```
+
+
+# We are RCI - the office of research cyber infrastructure
+
+We embody the university-wide effort to expand and update UW–Madison’s research Cyberinfrastructure resources. We are a small team who ... 
+
+![data life cycle](images/data_life_cycle.png)
+# What I'm going to show you today
+
+1. A quick walk through the RStudio IDE running on our servers. Highlight that it is basically the same user experience you get on your laptop. I'll crunch some data, produce some visualizations, and create a model. 
+
+2. Highlight the ResearchDrive integration. Seamless access from the IDE to 4T of storage. 
+
+3. Post the data to a pinboard
+
+4. Publish a API with the model
+
+5. Launch a Jupyter Labs session and access some of the pinned objects 
+
+6. Launch q VS Code session and access the models through and API
+
+7. Future features
+
