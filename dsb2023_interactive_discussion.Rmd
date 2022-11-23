@@ -10,32 +10,139 @@ knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
 library(palmerpenguins)
+library(pins)
+library(plumber)
+library(gt)
 
-data <- penguins
-
-
+library(foreign)
+library(nnet)
+library(reshape2)
 
 ```
+
+Theme:
+Information Insights: Shaping Futures with Data and Computing. 
+
+Sub-themes:
+- Insights from Machine Learning and Computing
+- Ethics of Data Driven Decision Making
+- Unlocking Insights from Digitized Information
+- Methodologies & Tools
+- Skill Sharing, Collaboration, and Education
+
+Your proposal will be evaluated based on how it addresses the following questions:
+1. How does your session relate to the conference theme of Information Insights: Shaping Futures with Data and Computing?
+2. How might attendees leverage or use the information in the session?
+3. What is the format of your session, including the schedule for proposed activities?
+4. How do you intend to make the session interactive?
+5. How is the session relevant to the Bazaar theme or a sub-theme?
+
 
 
 # We are RCI - the office of research cyber infrastructure
 
-We embody the university-wide effort to expand and update UW–Madison’s research Cyberinfrastructure resources. We are a small team who ... 
+We are part of UW-Madison campus-wide effort to expand and update the university’s research Cyberinfrastructure resources. We are a small team who ... 
 
 ![data life cycle](images/data_life_cycle.png)
+
 # What I'm going to show you today
 
-1. A quick walk through the RStudio IDE running on our servers. Highlight that it is basically the same user experience you get on your laptop. I'll crunch some data, produce some visualizations, and create a model. 
+0. A quick walk through the RStudio IDE running on our servers. Highlight that it is basically the same user experience you get on your laptop, which means that transitioning to Workbench should be a painless experience for you the researcher, but it could open the door for several workflow improvements.
 
-2. Highlight the ResearchDrive integration. Seamless access from the IDE to 4T of storage. 
+I'll crunch some data, produce some visualizations, and create a model. 
 
-3. Post the data to a pinboard
+1. Highlight the ResearchDrive integration. Seamless access from the IDE to 4 TB of storage for UW-Madison researchers. For free.
 
-4. Publish a API with the model
+2. Post the data to a pinboard with the pins package .
 
-5. Launch a Jupyter Labs session and access some of the pinned objects 
+3. Publish a API with the plumber package.
 
-6. Launch q VS Code session and access the models through and API
+4. Launch a Jupyter Labs session and access some of the pinned objects 
 
-7. Future features
+5. Launch a VS Code session and access the models through and API
+
+6. Future features
+
+## Access the data 
+
+```{r}
+
+data <- palmerpenguins::penguins
+
+data <- data |> 
+  mutate(weight = body_mass_g/453.6) |>
+  filter(!is.na(flipper_length_mm))
+
+#ideally I will access my data from researchdrive 
+
+```
+
+We all know that R through RStudio makes easy inspecting your data through its many built-in options. Today I'll highlight the gt package. 
+
+```{r}
+data |> 
+  head() |> 
+  gt() |> 
+  tab_header(
+    title = "The Palmer Penguins Dataset",
+    subtitle = "featuring Adelia, Geentoo, and Chinstrap penguins!")
+```
+
+
+The dataset shows various body measurements taken on these three species.  
+
+
+![Measurements](images/culmen_depth.png)
+# Some visualizations
+
+We are all familiar with R and its ability to produce visualizations with relatively little effort.  
+
+```{r}
+penguins_plot <- data |> 
+  ggplot(aes(x = species, y = flipper_length_mm, color = species)) +
+  geom_boxplot() +
+  theme_bw()
+
+penguins_plot
+```
+## How about multilingual teams?
+
+I'm going to share with you some options you have to move artifacts around your team easily. Today I'm going to highlight a couple of options. Let's start with the `pins` package. 
+
+After you create a board, you can “pin” (save) data to a board with pin_write(). It takes three arguments: the board to pin to, an object, and a name:
+
+```{r}
+board <- board_rsconnect()
+
+pin_write(board, penguins_plot, "Plot", versioned = TRUE)
+```
+
+Once you have done that, other people can easily access your pinned objects. By default, when you access a (versioned) pinned object, it retrieves the latest version. You can list all the versions of a pinned object with `pin_versions()` which returns a list of existing versions for a pinned object. 
+
+```{r}
+board |> pin_versions("lares/Plot")
+
+```
+
+To read a specific version, supply the argument `version` to a `pin_read()` function call. 
+
+Imagine that you lab is in charge of modeling the weight of penguins based on the data found in the Palmer Penguins dataset. 
+
+```{r}
+penguin_model <- lm(weight ~ flipper_length_mm + species, data = data)
+
+summary(penguin_model)
+
+ml <- read.dta("https://stats.idre.ucla.edu/stat/data/hsbdemo.dta")
+
+
+ml |> tabyl(ses, prog)
+
+#data |> tabyl(species, bins(flipper_length_mm))
+```
+
+
+
+
+
 
