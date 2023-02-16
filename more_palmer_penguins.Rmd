@@ -1,0 +1,217 @@
+---
+title: "More Palmer Penguins"
+author: "Erwin Lares"
+date: "2023-02-07"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(janitor)
+library(googlesheets4)
+library(googledrive)
+library(lubridate)
+
+
+
+data <- read_csv("https://g-394ce9.dtn.globus.wisc.edu/public_data/palmerpenguins.csv") |> 
+  filter(!is.na(sex))
+
+# options(gargle_oauth_cache = ".secrets", 
+#         gargle_oauth_email = "lares@wisc.edu",
+#         gargle_oob_default = TRUE)
+
+```
+
+## New speciments are captured
+
+
+
+The success of Penguin research has been so overwhelmingly positive, that a few years after the initial data collection occurred, a new initiative to capture and tag new penguins was launched. 
+
+This device moves captured specimens into an enclosure. Specimens are measured and tagged and release right away.
+
+
+
+# Accessing the instrument's data 
+
+```{r}
+#library(palmerpenguins)
+# prop.table(table(data$island)) # not actually used here, but ...
+species_p <- prop.table(xtabs(~island + species, data=data), margin=1)
+species_p
+
+# model four measurements, based on species (island is irrelevant here)
+bl <- lm(bill_length_mm ~ species, data=data)
+bd <- lm(bill_depth_mm ~  species, data=data)
+fl <- lm(flipper_length_mm ~ species, data=data)
+bm <- lm(body_mass_g ~    species, data=data)
+
+#simmulate one penguin
+for (i in 1:1) {
+  newdata <- data.frame(
+    island=sample.int(3, size=1) |>   # sample an island
+      factor(levels = c("1", "2", "3"), labels = c("Torgersen", "Biscoe", "Dream"))
+  )
+  
+  # generate species based on island
+  newdata$species <- sample.int(3, size=1, prob=species_p[newdata$island, ]) |>
+    factor(levels=c("1", "2", "3"), labels=(unique(data$species)))
+  # generate measurements based on species
+  newdata$bl <- predict(bl, newdata) + rnorm(1, sd=sigma(bl))
+  newdata$bd <- predict(bd, newdata) + rnorm(1, sd=sigma(bd))
+  newdata$fl <- predict(fl, newdata) + rnorm(1, sd=sigma(fl))
+  newdata$bm <- predict(bm, newdata) + rnorm(1, sd=sigma(bm))
+  print(newdata)  
+  if (i == 1) {
+    simdata <- newdata
+  } else {
+    simdata <- rbind(simdata, newdata)
+  }
+}
+
+```
+
+
+```{r}
+# Palmer Penguins contains these variables 
+# "species" Adelie: 152, Gentoo: 124, Chinstrap: 68
+
+# new_species <- sample(unique(data$species), 
+#                         10000, 
+#                         replace=TRUE, 
+#                         prob=c(0.4418605, 0.3604651, 0.1976744)) 
+
+# "island" Torgersen: 52, Biscoe: 168, Dream: 124
+# new_island <- sample(c("Togersen", "Biscoe", "Dream", "Humble"), 
+#                         1, 
+#                         replace=TRUE, 
+#                         prob=c(0.2, 0.2, 0.2, 0.40))
+# #prop.table(table(data$island))
+# 
+# 
+# # "bill_length_mm"
+# # Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+# #   32.10   39.23   44.45   43.92   48.50   59.60       2
+# 
+# 
+# new_bill_length_mm <- x<-runif(1, min=32.10, max=59.60)
+# # "bill_depth_mm"
+# # Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+# #   13.10   15.60   17.30   17.15   18.70   21.50       2
+# 
+# 
+# new_bill_depth_mm <- x<-runif(1, min=13.10, max=21.50)
+# # "flipper_length_mm"
+# # Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+# #   172.0   190.0   197.0   200.9   213.0   231.0       2
+# 
+# 
+# new_flipper_length_mm <- x<-runif(1, min=172.0, max=231.0)
+# # "body_mass_g"
+# # Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+# #    2700    3550    4050    4202    4750    6300       2
+# 
+# 
+# new_body_mass_g <- x<-runif(1, min=2700, max=6300)
+# # "sex"
+# # male female   NA's 
+# #    168    165     11
+# 
+# 
+# new_sex <- sample(unique(data$sex),
+#                   1,
+#                   replace=TRUE,
+#                   prob=c(0.4954955, 0.5045045))
+# #prop.table(table(data$sex))
+# # "year"  
+# # Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+# #    2007    2007    2008    2008    2009    2009
+
+new_sex <- sample(unique(data$sex),
+                  1,
+                  replace=TRUE,
+                  prob=c(0.4954955, 0.5045045))
+new_year <- sample(2009:2023, 1, replace = TRUE) |> as.integer()
+new_month <- sample(1:12, 1, replace = TRUE) |> as.integer()
+new_day <- sample(1:27, 1, replace = TRUE) |> as.integer()
+new_hour <- sample(0:23, 1, replace = TRUE) |> as.integer()
+
+
+new_penguin <- simdata |> 
+  mutate(species = species,
+         island = island, 
+         bill_length_mm = bl, 
+         bill_depth_mm = bd,
+         flipper_length_mm = fl,
+         body_mass_g = bm, 
+         sex = new_sex,
+         year = new_year,
+         month = new_month,
+         day = new_day,
+         hour = new_hour) |> 
+  select(-bl, -bd, -fl, -bm)
+
+
+
+```
+
+```{r}
+
+#creates the new sheet "new-penguin-entry" and an associated R object "test_sheet" that 
+#points to that sheet
+#googledrive::drive_trash("new-penguin-entry")
+
+
+
+#test_sheet <- gs4_create("new-penguin-entry", sheets = new_penguin)
+# sheet_append(ss = test_sheet, data = new_penguin)
+# drive_deauth()
+# drive_auth()
+# gs4_auth(token = drive_token())
+# test_sheet <- gs4_create("penguin-capture", sheets = new_penguin)
+
+drive_auth(path = "service_account_key.json")
+#
+gs4_auth(token = drive_token())
+
+
+sheet_append(ss = "1HEQa23hR202egPcnyAtQHGyPRw1WWv61H6aHnAhjcrc", 
+             data = new_penguin)
+
+
+
+# they definitely exist somewhere
+#googledrive::drive_find(type = "spreadsheet")
+
+
+```
+
+
+```{r, eval=FALSE}
+
+pop_summary <- function(df) {
+  df |> 
+    summarize(bill_length_mm = mean(bill_length_mm, na.rm = TRUE),
+              bill_depth_mm = mean(bill_depth_mm, na.rm = TRUE),
+              flipper_length_mm = mean(flipper_length_mm, na.rm = TRUE),
+              body_mass_g = mean(body_mass_g),
+              .groups = "keep") |> 
+    add_column(species = unique(df$species), 
+               island = unique(df$island), 
+               .before = 1)
+}
+
+penguins_summary <- data |>
+  group_by(species, island) |> 
+  group_split() |> 
+  map_dfr(.f = pop_summary)
+
+
+
+
+
+```
+

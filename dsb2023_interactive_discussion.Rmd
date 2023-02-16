@@ -1,5 +1,5 @@
 ---
-title: "DSB Interactive Discussion 2023"
+title: "Research Bazaar Interactive Discussion 2023"
 author: "Erwin Lares"
 date: "2022-11-08"
 output: html_document
@@ -13,10 +13,12 @@ library(palmerpenguins)
 library(pins)
 library(plumber)
 library(gt)
+library(knitr)
 
 library(foreign)
 library(nnet)
 library(reshape2)
+library(janitor)
 
 ```
 
@@ -43,29 +45,41 @@ Your proposal will be evaluated based on how it addresses the following question
 
 We are part of UW-Madison campus-wide effort to expand and update the university’s research Cyberinfrastructure resources. We are a small team who ... 
 
-![data life cycle](images/data_life_cycle.png)
+```{r rci-logo}
+
+include_graphics("images/rci_logo.png")
+
+```
+
+
 
 # What I'm going to show you today
+
+I'm here to tell you the story of a research team from a alternate universe who is using  
 
 0. A quick walk through the RStudio IDE running on our servers. Highlight that it is basically the same user experience you get on your laptop, which means that transitioning to Workbench should be a painless experience for you the researcher, but it could open the door for several workflow improvements.
 
 I'll crunch some data, produce some visualizations, and create a model. 
 
-1. Highlight the ResearchDrive integration. Seamless access from the IDE to 4 TB of storage for UW-Madison researchers. For free.
+0. Dispatch some field researchers to gather data. 
+
+1. Highlight the ResearchDrive integration. Seamless access from the IDE to 5 TB of storage for UW-Madison researchers. Free of charge.
 
 2. Post the data to a pinboard with the pins package .
 
-3. Publish a API with the plumber package.
+3. Publish the model as an API with the plumber package.
 
-4. Launch a Jupyter Labs session and access some of the pinned objects 
+4. Launch a Jupyter Labs session and access some of the pinned objects.
 
-5. Launch a VS Code session and access the models through and API
+5. Launch a VS Code session and access the models through and API.
 
-6. Future features
+6. Future features.
 
 ## Access the data 
 
-```{r}
+```{r ingest-data}
+
+cci_connect <- Sys.getenv("cci-connect")
 
 data <- palmerpenguins::penguins
 
@@ -79,7 +93,7 @@ data <- data |>
 
 We all know that R through RStudio makes easy inspecting your data through its many built-in options. Today I'll highlight the gt package. 
 
-```{r}
+```{r show-tabular-data}
 data |> 
   head() |> 
   gt() |> 
@@ -91,17 +105,23 @@ data |>
 
 The dataset shows various body measurements taken on these three species.  
 
+```{r measurements}
 
-![Measurements](images/culmen_depth.png)
+include_graphics("images/culmen_depth.png")
+
+```
+
+
 # Some visualizations
 
 We are all familiar with R and its ability to produce visualizations with relatively little effort.  
 
-```{r}
+```{r plot}
 penguins_plot <- data |> 
   ggplot(aes(x = species, y = flipper_length_mm, color = species)) +
-  geom_boxplot() +
-  theme_bw()
+  geom_jitter(alpha = 0.25) +
+  geom_boxplot(alpha = 0.25) +
+  theme_minimal()
 
 penguins_plot
 ```
@@ -111,34 +131,56 @@ I'm going to share with you some options you have to move artifacts around your 
 
 After you create a board, you can “pin” (save) data to a board with pin_write(). It takes three arguments: the board to pin to, an object, and a name:
 
-```{r}
-board <- board_rsconnect()
+```{r use-pins-1}
+board <- board_rsconnect(server = )
 
-pin_write(board, penguins_plot, "Plot", versioned = TRUE)
+board |> 
+pin_write(penguins_plot, "Plot", versioned = TRUE)
+
+board_disconnect(board)
 ```
 
-Once you have done that, other people can easily access your pinned objects. By default, when you access a (versioned) pinned object, it retrieves the latest version. You can list all the versions of a pinned object with `pin_versions()` which returns a list of existing versions for a pinned object. 
+Once you have done that, other people can easily access your pinned objects. Collaborators can access your data artifact by running this line of code 
 
-```{r}
+```{r use-pins-2, echo=FALSE, eval=FALSE}
+#library(pins)
+board <- board_rsconnect(server = cci_connect)
+
+read_object <- board |> 
+  pin_read("lares/Plot")
+
+read_object
+```
+
+By default, when you access a (versioned) pinned object, it retrieves the latest version. You can list all the versions of a pinned object with `pin_versions()` which returns a list of existing versions for a pinned object. 
+
+```{r use-pins-3, include=TRUE, eval=FALSE}
 board |> pin_versions("lares/Plot")
 
 ```
 
 To read a specific version, supply the argument `version` to a `pin_read()` function call. 
 
-Imagine that you lab is in charge of modeling the weight of penguins based on the data found in the Palmer Penguins dataset. 
+```{r use-pins-4, eval=FALSE}
 
-```{r}
-penguin_model <- lm(weight ~ flipper_length_mm + species, data = data)
+read_object <- pin_read(board, "lares/Plot", version = 7)
 
-summary(penguin_model)
+read_object
 
-ml <- read.dta("https://stats.idre.ucla.edu/stat/data/hsbdemo.dta")
+```
 
+# Data artifacts
 
-ml |> tabyl(ses, prog)
+We tend to think of the results of analysis as static: you carry your analysis and create your visualizations or models and you're done. However, there are many scenarios where that is not the case. Your data might be dynamic and constantly changing, or the results of an analysis may be a model that you — or your team — may come back to again and again as part of your decision making process.
 
-#data |> tabyl(species, bins(flipper_length_mm))
+I will show you how you can convert a model into an API that can answer your questions anytime you call upon it. 
+
+Imagine that you ... 
+
+```{r, data-artifact}
+
+2+2
+
 ```
 
 

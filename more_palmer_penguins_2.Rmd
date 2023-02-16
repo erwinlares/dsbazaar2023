@@ -1,0 +1,206 @@
+---
+title: "More Palmer Penguins"
+author: "Erwin Lares"
+date: "2023-02-07"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(janitor)
+library(googlesheets4)
+library(googledrive)
+library(lubridate)
+
+
+data <- read_csv("https://g-394ce9.dtn.globus.wisc.edu/public_data/palmerpenguins.csv") |> 
+  filter(!is.na(sex))
+
+# options(gargle_oauth_cache = ".secrets", 
+#         gargle_oauth_email = "lares@wisc.edu",
+#         gargle_oob_default = TRUE)
+
+```
+
+## New speciments are captured
+
+```{r simulated_data, eval = FALSE}
+# Palmer Penguins contains these variables 
+# "species" Adelie: 152, Gentoo: 124, Chinstrap: 68
+
+
+
+new_species <- sample(unique(data$species), 
+                        10000, 
+                        replace=TRUE, 
+                        prob=c(0.4418605, 0.3604651, 0.1976744)) 
+
+# "island" Torgersen: 52, Biscoe: 168, Dream: 124
+new_islands <- sample(unique(data$island), 
+                        10000, 
+                        replace=TRUE, 
+                        prob=c(0.1511628, 0.4883721, 0.3604651))
+#prop.table(table(data$island))
+# "bill_length_mm"
+# Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+#   32.10   39.23   44.45   43.92   48.50   59.60       2
+new_bill_lengths_mm <- x<-runif(10000, min=32.10, max=59.60)
+# "bill_depth_mm"
+# Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+#   13.10   15.60   17.30   17.15   18.70   21.50       2
+new_bill_depths_mm <- x<-runif(10000, min=13.10, max=21.50)
+# "flipper_length_mm"
+# Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+#   172.0   190.0   197.0   200.9   213.0   231.0       2
+new_flipper_lengths_mm <- x<-runif(10000, min=172.0, max=231.0)
+# "body_mass_g"
+# Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+#    2700    3550    4050    4202    4750    6300       2
+new_body_mass_g <- x<-runif(10000, min=2700, max=6300)
+# "sex"
+# male female   NA's 
+#    168    165     11
+new_sex <- sample(unique(data$sex),
+                  10000,
+                  replace=TRUE,
+                  prob=c(0.4954955, 0.5045045))
+#prop.table(table(data$sex))
+# "year"  
+# Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+#    2007    2007    2008    2008    2009    2009
+new_years <- rep(2023, 10000) |> as.integer()
+
+data <- data |> 
+  mutate(species = as_factor(species),
+         island = as_factor(island),
+         sex = as_factor(sex))
+
+new_penguins <- tibble(new_species |> as_factor(),
+                       new_islands |> as_factor(),
+                       new_bill_lengths_mm,
+                       new_bill_depths_mm,
+                       new_flipper_lengths_mm,
+                       new_body_mass_g,
+                       new_sex |> as_factor(),
+                       new_years)
+
+write_csv(new_penguins, "data/new_penguins.csv")
+
+
+```
+
+
+The success of Penguin research has been so overwhelmingly positive, that this year a new initiative to capture and tag new penguins was launched. 
+
+This device moves captured specimens into an enclosure. Specimens are measured and tagged and release right away.
+
+
+
+# Accessing the instrument's data 
+
+```{r}
+# Palmer Penguins contains these variables 
+# "species" Adelie: 152, Gentoo: 124, Chinstrap: 68
+
+# new_species <- sample(unique(data$species), 
+#                         10000, 
+#                         replace=TRUE, 
+#                         prob=c(0.4418605, 0.3604651, 0.1976744)) 
+
+# "island" Torgersen: 52, Biscoe: 168, Dream: 124
+new_island <- sample(unique(data$island), 
+                        1, 
+                        replace=TRUE, 
+                        prob=c(0.1511628, 0.4883721, 0.3604651))
+#prop.table(table(data$island))
+# "bill_length_mm"
+# Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+#   32.10   39.23   44.45   43.92   48.50   59.60       2
+new_bill_length_mm <- x<-runif(1, min=32.10, max=59.60)
+# "bill_depth_mm"
+# Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+#   13.10   15.60   17.30   17.15   18.70   21.50       2
+new_bill_depth_mm <- x<-runif(1, min=13.10, max=21.50)
+# "flipper_length_mm"
+# Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+#   172.0   190.0   197.0   200.9   213.0   231.0       2
+new_flipper_length_mm <- x<-runif(1, min=172.0, max=231.0)
+# "body_mass_g"
+# Min. 1st Qu.  Median    Mean 3rd Qu.    Max.    NA's 
+#    2700    3550    4050    4202    4750    6300       2
+new_body_mass_g <- x<-runif(1, min=2700, max=6300)
+# "sex"
+# male female   NA's 
+#    168    165     11
+new_sex <- sample(unique(data$sex),
+                  1,
+                  replace=TRUE,
+                  prob=c(0.4954955, 0.5045045))
+#prop.table(table(data$sex))
+# "year"  
+# Min. 1st Qu.  Median    Mean 3rd Qu.    Max. 
+#    2007    2007    2008    2008    2009    2009
+new_year <- Sys.Date() |> year()
+new_month <- Sys.Date() |> month()
+new_day <- Sys.Date() |> day() |> as.integer()
+new_hour <- Sys.Date() |> hour()
+
+
+new_penguin <- tibble(new_island |> as_factor(),
+                      new_bill_length_mm,
+                      new_bill_depth_mm,
+                      new_flipper_length_mm,
+                      new_body_mass_g,
+                      new_sex |> as_factor(),
+                      new_year,
+                      new_month, 
+                      new_day, 
+                      new_hour
+                      )
+
+
+
+```
+
+```{r}
+
+#creates the new sheet "new-penguin-entry" and an associated R object "test_sheet" that 
+#points to that sheet
+#googledrive::drive_trash("new-penguin-entry")
+
+
+
+#test_sheet <- gs4_create("new-penguin-entry", sheets = new_penguin)
+#Metadata can be accessed by gs4_get()
+#gs4_get(test_sheet)
+# Spreadsheet name: new-penguin-entry
+#               ID: 1MrvJ0ff2rXq8R9G2dJN8gVtmwoDbDKEwdHd2n8x1fTI
+#           Locale: en_US
+#        Time zone: Etc/GMT
+#      # of sheets: 1
+# 
+# (Sheet name): (Nominal extent in rows x columns)
+#  new_penguin: 2 x 10
+
+
+
+# sheet_append(ss = test_sheet, data = new_penguin)
+drive_deauth()
+drive_auth(path = "service_account_key.json")
+gs4_auth(token = drive_token())
+#gs4_auth(path = "service_account_key.json")
+
+# test_sheet <- gs4_create("new-penguins-dataset", sheets = new_penguin)
+# gs4_get(test_sheet)
+#this created a sheet that exists somewhere. I can't see it on google drive thought the web interface?
+
+# 1YQVENSl0U79GW_ygi-0uXvY_oID1P9d_qO3vKDf0g0U
+
+sheet_append(ss = "1YQVENSl0U79GW_ygi-0uXvY_oID1P9d_qO3vKDf0g0U", 
+             data = new_penguin)
+
+
+```
+

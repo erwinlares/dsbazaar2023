@@ -1,0 +1,65 @@
+---
+title: "Detour into logistic regression"
+format: html
+---
+
+## Modeling a penguin
+
+```{r}
+library(tidyverse)
+library(janitor)
+library(nnet)
+library(tidyLPA)
+
+
+data <- read_csv("https://g-394ce9.dtn.globus.wisc.edu/public_data/palmerpenguins.csv")
+
+#lets add a random mutation to our penguins. 
+
+data <- data |> 
+  mutate(fly = sample(c(0,1), 
+                      replace = TRUE,
+                      size = nrow(data)) |> as.logical(), 
+         species = as_factor(species),
+         island = as_factor(island),
+         sex = as_factor(sex))
+
+summary(data)
+
+table(data$sex)
+prop.table(table(data$sex))
+data |> tabyl(species, sex)
+
+model <- glm(fly ~ species + sex + flipper_length_mm, data = data, family = "binomial")
+test <- nnet::multinom(fly ~ species + sex + flipper_length_mm, data = data)
+summary(test)
+summary(model)
+
+
+#log-off of flying = 
+# -0.82 - 0.0593(if_gentoo) + 0.0355(if_chinstrap) + 0.0890(if_female) + 0.0041(flipper_length)
+
+```
+
+
+```{r}
+
+#latent class analysis / mixture model 
+#tidyLPA
+
+fit <- data |> 
+    select(bill_length_mm,
+           bill_depth_mm, 
+           flipper_length_mm,
+           body_mass_g) |> 
+#    single_imputation() |> 
+    estimate_profiles(3)
+
+get_data(fit)
+
+count(data, species)
+
+table(get_data(fit)$Class)
+
+```
+
